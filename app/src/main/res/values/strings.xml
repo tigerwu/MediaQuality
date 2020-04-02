@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">MediaQuality</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="qc">质检</string>
+    <string name="next">下一步</string>
+    <string name="permission_request">需要音视频相关权限.</string>
+    <string name="camera_error">本机不支持Camera2 API.</string>
 </resources>

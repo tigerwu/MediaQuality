@@ -8,7 +8,7 @@ public class InsureQC {
     private UUID mInsureQCId;
 
     //保险序号
-    private UUID mInsureId;
+    private Insure mInsure;
 
     //时间
     private Date mSignDate;
@@ -22,7 +22,7 @@ public class InsureQC {
     //是否上传了
     private Boolean mIsUploaded;
 
-    //质检点是否都通过
+    //质检点是否全部通过
     private Boolean mQCIsOk;
 
     //质检模块列表
