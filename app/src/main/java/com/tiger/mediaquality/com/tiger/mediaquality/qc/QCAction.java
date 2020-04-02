@@ -2,7 +2,7 @@ package com.tiger.mediaquality.com.tiger.mediaquality.qc;
 
 import java.util.UUID;
 
-public class qcaction {
+public class QCAction {
     // 质检模块序号
     private UUID mActionId;
     // 质检模块标题
