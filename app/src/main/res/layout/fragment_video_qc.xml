@@ -18,6 +18,7 @@
         android:orientation="vertical">
 
         <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/qcaction_recycler_view"
             android:layout_width="match_parent"
             android:layout_height="500dp" />
 
@@ -27,6 +28,13 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/qc" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="质检内容"
+            />
 
         <Button
             android:id="@+id/next"

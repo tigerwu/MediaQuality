@@ -27,6 +27,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -40,6 +42,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
+
+import com.tiger.mediaquality.com.tiger.mediaquality.qc.QCAction;
+import com.tiger.mediaquality.com.tiger.mediaquality.qc.QCActionLab;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -227,6 +232,9 @@ public class VideoQCFragment extends Fragment {
     private String mNextVideoAbsolutePath;
     private CaptureRequest.Builder mPreviewBuilder;
 
+    private RecyclerView mQCactionRecyclerView;
+    private QCActionAdapter mAdapter;
+
     public VideoQCFragment() {
         // Required empty public constructor
     }
@@ -267,9 +275,12 @@ public class VideoQCFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_video_qc, container, false);
+        View view =  inflater.inflate(R.layout.fragment_video_qc, container, false);
 
-
+        mQCactionRecyclerView = (RecyclerView)view.findViewById(R.id.qcaction_recycler_view);
+        mQCactionRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        updateQCActionList();
+        return view;
     }
 
     @Override
@@ -689,6 +700,45 @@ public class VideoQCFragment extends Fragment {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private class QCActionHolder extends  RecyclerView.ViewHolder {
+        public QCActionHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater.inflate(R.layout.list_item_qcaction, parent, false));
+        }
+    }
+
+    private class QCActionAdapter extends RecyclerView.Adapter<QCActionHolder> {
+        private List<QCAction> mQCActions;
+        public QCActionAdapter(List<QCAction> qcActions) {
+            mQCActions = qcActions;
+        }
+
+
+        @NonNull
+        @Override
+        public QCActionHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
+            return new QCActionHolder(layoutInflater, parent);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull QCActionHolder holder, int position) {
+
+        }
+
+        @Override
+        public int getItemCount() {
+            return mQCActions.size();
+        }
+    }
+
+    private void updateQCActionList() {
+        QCActionLab qcActionLab = QCActionLab.get(getActivity());
+        List<QCAction> qcActions = qcActionLab.getQCActions();
+
+        mAdapter = new QCActionAdapter(qcActions);
+        mQCactionRecyclerView.setAdapter(mAdapter);
     }
 
 }
