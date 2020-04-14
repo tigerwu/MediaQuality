@@ -9,7 +9,7 @@ public class QCAction {
     private String mTitle;
     // 质检模块内容
     private String mContent;
-    // 质检模块状态，没有动作，正在质检中，已经完毕 1/2/3
+    // 质检模块状态，等待质检，正在质检中，已经完毕 1/2/3
     private Integer mState;
     // 质检模块类型 视频/音频 1/2
     private Integer mType;

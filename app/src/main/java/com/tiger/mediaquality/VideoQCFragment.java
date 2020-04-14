@@ -41,6 +41,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tiger.mediaquality.com.tiger.mediaquality.qc.QCAction;
@@ -234,6 +235,12 @@ public class VideoQCFragment extends Fragment {
 
     private RecyclerView mQCactionRecyclerView;
     private QCActionAdapter mAdapter;
+    private Button mQCButton;
+    private Button mNextButton;
+    private TextView mQCActionContentTextView;
+    private List<QCAction> mQCActions;
+    private Integer mQCActionsIndex;
+
 
     public VideoQCFragment() {
         // Required empty public constructor
@@ -275,11 +282,37 @@ public class VideoQCFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view =  inflater.inflate(R.layout.fragment_video_qc, container, false);
+        View view = inflater.inflate(R.layout.fragment_video_qc, container, false);
 
-        mQCactionRecyclerView = (RecyclerView)view.findViewById(R.id.qcaction_recycler_view);
+        mQCactionRecyclerView = (RecyclerView) view.findViewById(R.id.qcaction_recycler_view);
         mQCactionRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         updateQCActionList();
+
+        mQCButton = (Button) view.findViewById(R.id.qc_button);
+        mQCButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getActivity(), "开始质检", Toast.LENGTH_SHORT).show();
+            }
+        });
+        mNextButton = (Button) view.findViewById(R.id.next_button);
+        mNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mQCActionsIndex < (mQCActions.size() - 1)) {
+                    mQCActionsIndex = mQCActionsIndex + 1;
+                    updateQCActionContentTextView(mQCActions.get(mQCActionsIndex));
+                }
+
+            }
+        });
+
+        mQCActionContentTextView = (TextView) view.findViewById(R.id.qccontent_textview);
+
+        mQCActionsIndex = 0;
+        mQCActions = QCActionLab.get(getActivity()).getQCActions();
+        updateQCActionContentTextView(mQCActions.get(mQCActionsIndex));
+
         return view;
     }
 
@@ -435,8 +468,6 @@ public class VideoQCFragment extends Fragment {
             throw new RuntimeException("Interrupted while trying to lock camera opening.");
         }
     }
-
-
 
 
     private void closeCamera() {
@@ -702,14 +733,36 @@ public class VideoQCFragment extends Fragment {
         }
     }
 
-    private class QCActionHolder extends  RecyclerView.ViewHolder {
+    private class QCActionHolder extends RecyclerView.ViewHolder {
+        private TextView mQCActionTitleView;
+        private TextView mQCActionStateView;
+        private QCAction mQCAction;
+
         public QCActionHolder(LayoutInflater inflater, ViewGroup parent) {
             super(inflater.inflate(R.layout.list_item_qcaction, parent, false));
+
+            mQCActionTitleView = (TextView) itemView.findViewById(R.id.qcaction_title);
+            mQCActionStateView = (TextView) itemView.findViewById(R.id.qcaction_state);
+        }
+
+        public void bind(QCAction qcAction) {
+            String state = "无状态";
+            mQCAction = qcAction;
+            mQCActionTitleView.setText(mQCAction.getTitle());
+            if (mQCAction.getState() == 1) {
+                state = "未质检";
+            } else if (mQCAction.getState() == 2) {
+                state = "正在质检";
+            } else if (mQCAction.getState() == 3) {
+                state = "已质检";
+            }
+            mQCActionStateView.setText(state);
         }
     }
 
     private class QCActionAdapter extends RecyclerView.Adapter<QCActionHolder> {
         private List<QCAction> mQCActions;
+
         public QCActionAdapter(List<QCAction> qcActions) {
             mQCActions = qcActions;
         }
@@ -724,7 +777,8 @@ public class VideoQCFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull QCActionHolder holder, int position) {
-
+            QCAction qcAction = mQCActions.get(position);
+            holder.bind(qcAction);
         }
 
         @Override
@@ -739,6 +793,10 @@ public class VideoQCFragment extends Fragment {
 
         mAdapter = new QCActionAdapter(qcActions);
         mQCactionRecyclerView.setAdapter(mAdapter);
+    }
+
+    private void updateQCActionContentTextView(QCAction qcAction) {
+        mQCActionContentTextView.setText(qcAction.getContent());
     }
 
 }
