@@ -301,7 +301,13 @@ public class VideoQCFragment extends Fragment {
             public void onClick(View v) {
                 if (mQCActionsIndex < (mQCActions.size() - 1)) {
                     mQCActionsIndex = mQCActionsIndex + 1;
+                    if (mQCActionsIndex == (mQCActions.size() - 1)) {
+                        mNextButton.setText("完成");
+                    }
                     updateQCActionContentTextView(mQCActions.get(mQCActionsIndex));
+                }
+                else if (mNextButton.getText().equals("完成")) {
+                    Toast.makeText(getActivity(), "完成签约", Toast.LENGTH_SHORT).show();
                 }
 
             }

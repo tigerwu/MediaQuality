@@ -41,6 +41,17 @@ public class QCActionLab {
         act3.setType(1);
         mQCActions.add(act3);
 
+        QCAction act4 = new QCAction();
+        act4.setTitle("保险合同确认");
+        act4.setContent("请代理人将保险合同文本停留镜头前3秒");
+        act4.setType(1);
+        mQCActions.add(act4);
+
+        QCAction act5 = new QCAction();
+        act5.setTitle("保险合同签字确认");
+        act5.setContent("请代理人将保险合同签字页停留镜头前3秒");
+        act5.setType(1);
+        mQCActions.add(act5);
 
     }
 
