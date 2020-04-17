@@ -9,6 +9,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
@@ -20,6 +24,8 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
+import android.media.ImageReader;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
@@ -47,6 +53,7 @@ import android.widget.Toast;
 import com.tiger.mediaquality.com.tiger.mediaquality.qc.QCAction;
 import com.tiger.mediaquality.com.tiger.mediaquality.qc.QCActionLab;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -167,7 +174,7 @@ public class VideoQCFragment extends Fragment {
     /**
      * MediaRecorder
      */
-    private MediaRecorder mMediaRecorder;
+    //private MediaRecorder mMediaRecorder;
 
     /**
      * Whether the app is recording video now
@@ -210,8 +217,10 @@ public class VideoQCFragment extends Fragment {
             cameraDevice.close();
             mCameraDevice = null;
             //关闭imagereader
-            // mImageReader.close();
-            // mImageReader = null;
+            if (mImageReader != null) {
+                mImageReader.close();
+                mImageReader = null;
+            }
         }
 
         @Override
@@ -220,8 +229,10 @@ public class VideoQCFragment extends Fragment {
             cameraDevice.close();
             mCameraDevice = null;
             //关闭imagereader
-            // mImageReader.close();
-            // mImageReader = null;
+            if (mImageReader != null) {
+                mImageReader.close();
+                mImageReader = null;
+            }
             Activity activity = getActivity();
             if (null != activity) {
                 activity.finish();
@@ -232,6 +243,31 @@ public class VideoQCFragment extends Fragment {
     private Integer mSensorOrientation;
     private String mNextVideoAbsolutePath;
     private CaptureRequest.Builder mPreviewBuilder;
+
+    private ImageReader mImageReader;
+
+    private ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Log.e(TAG, "onImageAvailable");
+//            Image image = reader.acquireLatestImage();
+//
+//            if (image != null) {
+//                ByteBuffer byteBuffer = image.getPlanes()[0].getBuffer();
+//                byte[] bytes = new byte[byteBuffer.remaining()];
+//                byteBuffer.get(bytes);
+//
+//                Bitmap temp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//                LogUtil.d("image->" + image.getWidth() + "|" + image.getHeight() + " format->" + image.getFormat() +
+//                        " planes.length->" + image.getPlanes().length + " bytes->" + bytes.length + " temp->" + temp.getByteCount());
+//                Bitmap newBitmap = BitmapUtil.rotateBitmap(temp, 90);
+//                // mOnGetBitmapInterface.getABitmap(newBitmap);
+//
+//                image.close();
+//                image = null;
+//            }
+        }
+    };
 
     private RecyclerView mQCactionRecyclerView;
     private QCActionAdapter mAdapter;
@@ -289,27 +325,71 @@ public class VideoQCFragment extends Fragment {
         updateQCActionList();
 
         mQCButton = (Button) view.findViewById(R.id.qc_button);
+        mNextButton = (Button) view.findViewById(R.id.next_button);
+
+
         mQCButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getActivity(), "开始质检", Toast.LENGTH_SHORT).show();
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Do stuff…
+                        Toast.makeText(getActivity(), "开始质检...", Toast.LENGTH_SHORT).show();
+                        mQCActions.get(mQCActionsIndex).setState(2);
+                        updateQCActionList();
+                    }
+                });
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Do stuff…
+                                Toast.makeText(getActivity(), "通过质检", Toast.LENGTH_SHORT).show();
+                                mQCActions.get(mQCActionsIndex).setState(3);
+                                mQCActions.get(mQCActionsIndex).setSuccess(true);
+                                mNextButton.setEnabled(true);
+                                if (mQCActionsIndex == (mQCActions.size()-1)) {
+                                    mQCButton.setEnabled(false);
+                                }
+                                updateQCActionList();
+                            }
+                        });
+                    }
+                }).start();
             }
         });
-        mNextButton = (Button) view.findViewById(R.id.next_button);
+
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mQCActionsIndex < (mQCActions.size() - 1)) {
-                    mQCActionsIndex = mQCActionsIndex + 1;
-                    if (mQCActionsIndex == (mQCActions.size() - 1)) {
-                        mNextButton.setText("完成");
-                    }
-                    updateQCActionContentTextView(mQCActions.get(mQCActionsIndex));
-                }
-                else if (mNextButton.getText().equals("完成")) {
-                    Toast.makeText(getActivity(), "完成签约", Toast.LENGTH_SHORT).show();
-                }
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
 
+                        if (mQCActionsIndex < (mQCActions.size() - 1)) {
+                            mNextButton.setEnabled(false);
+                            mQCActionsIndex = mQCActionsIndex + 1;
+                            if (mQCActionsIndex == (mQCActions.size() - 1)) {
+                                mNextButton.setText("完成");
+                            }
+                            mQCActions.get(mQCActionsIndex - 1).setState(3);
+                            mQCActions.get(mQCActionsIndex - 1).setSuccess(true);
+                            updateQCActionList();
+                            updateQCActionContentTextView(mQCActions.get(mQCActionsIndex));
+                        } else if (mNextButton.getText().equals("完成")) {
+                            Toast.makeText(getActivity(), "完成签约", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             }
         });
 
@@ -454,12 +534,12 @@ public class VideoQCFragment extends Fragment {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
             }
             configureTransform(width, height);
-            mMediaRecorder = new MediaRecorder();
 
-//            mImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(),
-//                    ImageFormat.JPEG, 2);
-//            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, null);
 
+            // mImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(), ImageFormat.JPEG, 2);
+            // mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, null);
+
+            // mMediaRecorder = new MediaRecorder();
             // mAudioCapturer = new AudioCapturer();
 
             manager.openCamera(cameraId, mStateCallback, null);
@@ -484,10 +564,15 @@ public class VideoQCFragment extends Fragment {
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
-            if (null != mMediaRecorder) {
-                mMediaRecorder.release();
-                mMediaRecorder = null;
+            //关闭imagereader
+            if (mImageReader != null) {
+                mImageReader.close();
+                mImageReader = null;
             }
+//            if (null != mMediaRecorder) {
+//                mMediaRecorder.release();
+//                mMediaRecorder = null;
+//            }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.");
         } finally {
@@ -516,8 +601,8 @@ public class VideoQCFragment extends Fragment {
             mPreviewBuilder.addTarget(previewSurface);
 
             //把ImageReader的surface添加给CaptureRequest.Builder，使预览surface和ImageReader同时收到数据回调。
-            //surfaces.add(mImageReader.getSurface());
-            //mPreviewBuilder.addTarget(mImageReader.getSurface());
+            // surfaces.add(mImageReader.getSurface());
+            // mPreviewBuilder.addTarget(mImageReader.getSurface());
 
             mCameraDevice.createCaptureSession(surfaces,//Collections.singletonList(previewSurface),
                     new CameraCaptureSession.StateCallback() {
@@ -752,17 +837,37 @@ public class VideoQCFragment extends Fragment {
         }
 
         public void bind(QCAction qcAction) {
-            String state = "无状态";
+
             mQCAction = qcAction;
-            mQCActionTitleView.setText(mQCAction.getTitle());
-            if (mQCAction.getState() == 1) {
-                state = "未质检";
-            } else if (mQCAction.getState() == 2) {
-                state = "正在质检";
-            } else if (mQCAction.getState() == 3) {
-                state = "已质检";
-            }
-            mQCActionStateView.setText(state);
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // Do stuff…
+                    String state = "无状态";
+                    int color = Color.BLACK;
+
+                    mQCActionTitleView.setText(mQCAction.getTitle());
+                    if (mQCAction.getState() == 1) {
+                        state = "未质检";
+                        color = Color.parseColor("#87CEEB");
+                    } else if (mQCAction.getState() == 2) {
+                        state = "正在质检";
+                        color = Color.BLUE;
+                    } else if (mQCAction.getState() == 3) {
+                        state = "已质检";
+                        if (mQCAction.getSuccess()) {
+                            color = Color.GREEN;
+                        }
+                        else {
+                            color = Color.RED;
+                        }
+                    }
+                    mQCActionTitleView.setTextColor(color);
+                    mQCActionStateView.setTextColor(color);
+                    mQCActionStateView.setText(state);
+                }
+            });
+
         }
     }
 
@@ -801,8 +906,16 @@ public class VideoQCFragment extends Fragment {
         mQCactionRecyclerView.setAdapter(mAdapter);
     }
 
+    private QCAction mQCAction;
     private void updateQCActionContentTextView(QCAction qcAction) {
-        mQCActionContentTextView.setText(qcAction.getContent());
+        mQCAction = qcAction;
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Do stuff…
+                mQCActionContentTextView.setText(mQCAction.getContent());
+            }
+        });
     }
 
 }
