@@ -7,6 +7,11 @@
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:layout_alignParentTop="true" />
+    <com.tiger.mediaquality.FaceView
+        android:id="@+id/faceview"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:layout_alignParentTop="true" />
 
 
     <LinearLayout

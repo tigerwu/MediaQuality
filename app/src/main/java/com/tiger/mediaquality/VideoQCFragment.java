@@ -14,15 +14,21 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.Face;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -276,7 +282,11 @@ public class VideoQCFragment extends Fragment {
     private TextView mQCActionContentTextView;
     private List<QCAction> mQCActions;
     private Integer mQCActionsIndex;
+    private ArrayList<RectF> mFacesRect = new ArrayList<RectF>();
+    private FaceView mFaceView;
+    private Matrix mFaceDetectMatrix = new Matrix();
 
+    private CameraCharacteristics mCameraCharacteristics;
 
     public VideoQCFragment() {
         // Required empty public constructor
@@ -405,6 +415,7 @@ public class VideoQCFragment extends Fragment {
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        mFaceView = (FaceView) view.findViewById(R.id.faceview);
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -487,6 +498,7 @@ public class VideoQCFragment extends Fragment {
 
             // Choose the sizes for camera preview and video recording
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            mCameraCharacteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
@@ -511,6 +523,8 @@ public class VideoQCFragment extends Fragment {
 
             // mMediaRecorder = new MediaRecorder();
             // mAudioCapturer = new AudioCapturer();
+
+            initFaceDetect();
 
             manager.openCamera(cameraId, mStateCallback, null);
         } catch (CameraAccessException e) {
@@ -607,14 +621,80 @@ public class VideoQCFragment extends Fragment {
             setUpCaptureRequestBuilder(mPreviewBuilder);
             HandlerThread thread = new HandlerThread("CameraPreview");
             thread.start();
-            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);
+            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
+    private CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+            Activity activity = getActivity();
+            if (null != activity) {
+                // Toast.makeText(activity, "开启预览成功", Toast.LENGTH_SHORT).show();
+                handleFacesDetect(result);
+            }
+        }
+
+        @Override
+        public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
+            super.onCaptureFailed(session, request, failure);
+            Log.e(TAG,"onCaptureFailed");
+            Activity activity = getActivity();
+            if (null != activity) {
+                Toast.makeText(activity, "开启预览失败", Toast.LENGTH_SHORT).show();
+            }
+         }
+    };
+
+
+    private void initFaceDetect() {
+
+        Integer faceDetectCount = mCameraCharacteristics.get(CameraCharacteristics.STATISTICS_INFO_MAX_FACE_COUNT);
+
+        Rect activeArraySize = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        float scaledWidth = (float)(mPreviewSize.getWidth()) / activeArraySize.width();
+        float scaledHeight = (float)(mPreviewSize.getHeight()) / activeArraySize.height();
+        mFaceDetectMatrix.postScale(scaledWidth, scaledHeight);
+
+    }
+
+    private void handleFacesDetect(TotalCaptureResult result) {
+        Face faces[] = result.get(CaptureResult.STATISTICS_FACES);
+        mFacesRect.clear();
+
+        for (int index = 0; index < faces.length; index++) {
+            Rect bounds = faces[index].getBounds();
+            int left = bounds.left;
+            int top = bounds.top;
+            int right = bounds.right;
+            int bottom = bounds.bottom;
+
+            RectF rawFaceRect = new RectF((float)left, (float)top, (float)right, (float)bottom);
+            mFaceDetectMatrix.mapRect(rawFaceRect);
+            mFacesRect.add(rawFaceRect);
+        }
+        if (mFacesRect != null &&  mFacesRect.size() > 0)
+            Log.d(TAG, "onCaptureCompleted 检测到" + mFacesRect.size() + "张人脸");
+        mFaceView.setFaces(mFacesRect);
+        /*
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mFacesRect != null &&  mFacesRect.size() > 0)
+                    Log.d(TAG, "onCaptureCompleted 检测到" + mFacesRect.size() + "张人脸");
+                    mFaceView.setFaces(mFacesRect);
+            }
+        });
+        */
+    }
+
     private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        builder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CameraCharacteristics.STATISTICS_FACE_DETECT_MODE_SIMPLE);
     }
 
     /**
