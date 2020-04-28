@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
@@ -49,7 +50,10 @@ public class FaceView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawText("FaceView",(float)10.0,(float)10.0, mPaint);
+        TextPaint tp = new TextPaint();
+        tp.setTextSize(50);
+        canvas.drawText("FaceView",(float)100.0,(float)100.0, tp);
+        canvas.drawRect(600, 600, 1000, 1000, mPaint);
         if (mFaces != null) {
             for (RectF face : mFaces) {
                 canvas.drawRect(face, mPaint);

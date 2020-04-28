@@ -651,46 +651,7 @@ public class VideoQCFragment extends Fragment {
     };
 
 
-    private void initFaceDetect() {
 
-        Integer faceDetectCount = mCameraCharacteristics.get(CameraCharacteristics.STATISTICS_INFO_MAX_FACE_COUNT);
-
-        Rect activeArraySize = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-        float scaledWidth = (float)(mPreviewSize.getWidth()) / activeArraySize.width();
-        float scaledHeight = (float)(mPreviewSize.getHeight()) / activeArraySize.height();
-        mFaceDetectMatrix.postScale(scaledWidth, scaledHeight);
-
-    }
-
-    private void handleFacesDetect(TotalCaptureResult result) {
-        Face faces[] = result.get(CaptureResult.STATISTICS_FACES);
-        mFacesRect.clear();
-
-        for (int index = 0; index < faces.length; index++) {
-            Rect bounds = faces[index].getBounds();
-            int left = bounds.left;
-            int top = bounds.top;
-            int right = bounds.right;
-            int bottom = bounds.bottom;
-
-            RectF rawFaceRect = new RectF((float)left, (float)top, (float)right, (float)bottom);
-            mFaceDetectMatrix.mapRect(rawFaceRect);
-            mFacesRect.add(rawFaceRect);
-        }
-        if (mFacesRect != null &&  mFacesRect.size() > 0)
-            Log.d(TAG, "onCaptureCompleted 检测到" + mFacesRect.size() + "张人脸");
-        mFaceView.setFaces(mFacesRect);
-        /*
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mFacesRect != null &&  mFacesRect.size() > 0)
-                    Log.d(TAG, "onCaptureCompleted 检测到" + mFacesRect.size() + "张人脸");
-                    mFaceView.setFaces(mFacesRect);
-            }
-        });
-        */
-    }
 
     private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
@@ -726,6 +687,59 @@ public class VideoQCFragment extends Fragment {
             matrix.postRotate(90 * (rotation - 2), centerX, centerY);
         }
         mTextureView.setTransform(matrix);
+    }
+
+
+
+    private void initFaceDetect() {
+        Activity activity = getActivity();
+
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
+        Integer faceDetectCount = mCameraCharacteristics.get(CameraCharacteristics.STATISTICS_INFO_MAX_FACE_COUNT);
+
+        //获取成像区域
+        Rect activeArraySize = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+
+        // float scaledWidth = (float)(mPreviewSize.getWidth()) / activeArraySize.width();
+        // float scaledHeight = (float)(mPreviewSize.getHeight()) / activeArraySize.height();
+
+        float scaledWidth = (float)1080 / activeArraySize.width();
+        float scaledHeight = (float)1500 / activeArraySize.height();
+
+        //mFaceDetectMatrix.setRotate(mSensorOrientation);
+        mFaceDetectMatrix.postScale(scaledWidth, scaledHeight);
+
+    }
+
+    private void handleFacesDetect(TotalCaptureResult result) {
+        Face faces[] = result.get(CaptureResult.STATISTICS_FACES);
+        mFacesRect.clear();
+
+        for (int index = 0; index < faces.length; index++) {
+            Rect bounds = faces[index].getBounds();
+            int left = bounds.left;
+            int top = bounds.top;
+            int right = bounds.right;
+            int bottom = bounds.bottom;
+
+            RectF rawFaceRect = new RectF((float)left, (float)top, (float)right, (float)bottom);
+            mFaceDetectMatrix.mapRect(rawFaceRect);
+            mFacesRect.add(rawFaceRect);
+        }
+        if (mFacesRect != null &&  mFacesRect.size() > 0)
+            Log.d(TAG, "onCaptureCompleted 检测到" + mFacesRect.size() + "张人脸");
+        mFaceView.setFaces(mFacesRect);
+        /*
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mFacesRect != null &&  mFacesRect.size() > 0)
+                    Log.d(TAG, "onCaptureCompleted 检测到" + mFacesRect.size() + "张人脸");
+                    mFaceView.setFaces(mFacesRect);
+            }
+        });
+        */
     }
 
     private void closePreviewSession() {
