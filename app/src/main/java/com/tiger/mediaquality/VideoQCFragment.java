@@ -656,6 +656,7 @@ public class VideoQCFragment extends Fragment {
     private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         builder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CameraCharacteristics.STATISTICS_FACE_DETECT_MODE_SIMPLE);
+        builder.set(CaptureRequest.JPEG_ORIENTATION, mSensorOrientation);
     }
 
     /**
@@ -703,16 +704,23 @@ public class VideoQCFragment extends Fragment {
 
         // float scaledWidth = (float)(mPreviewSize.getWidth()) / activeArraySize.width();
         // float scaledHeight = (float)(mPreviewSize.getHeight()) / activeArraySize.height();
+        int mPVH = mPreviewSize.getHeight();
+        int mPVW = mPreviewSize.getWidth();
+        int mFVH = mFaceView.getHeight();
+        int mFVW = mFaceView.getWidth();
+        int mW = activeArraySize.width();
+        int mH = activeArraySize.height();
 
-        float scaledWidth = (float)1080 / activeArraySize.width();
-        float scaledHeight = (float)1500 / activeArraySize.height();
+        float scaledWidth = (float)mFVW / mH;
+        float scaledHeight = (float)mFVH / mW;
 
-        //mFaceDetectMatrix.setRotate(mSensorOrientation);
+        // mFaceDetectMatrix.setRotate((float)mSensorOrientation);
         mFaceDetectMatrix.postScale(scaledWidth, scaledHeight);
 
     }
 
     private void handleFacesDetect(TotalCaptureResult result) {
+        Integer mode = result.get(CaptureResult.STATISTICS_FACE_DETECT_MODE);
         Face faces[] = result.get(CaptureResult.STATISTICS_FACES);
         mFacesRect.clear();
 

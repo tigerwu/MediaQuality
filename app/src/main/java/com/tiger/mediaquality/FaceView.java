@@ -51,9 +51,14 @@ public class FaceView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         TextPaint tp = new TextPaint();
-        tp.setTextSize(50);
-        canvas.drawText("FaceView",(float)100.0,(float)100.0, tp);
-        canvas.drawRect(600, 600, 1000, 1000, mPaint);
+        tp.setTextSize(30);
+        canvas.drawText("FV100*100",(float)100.0,(float)100.0, tp);
+        canvas.drawText("FV200*200",(float)200.0,(float)200.0, tp);
+        canvas.drawText("FV300*300",(float)300.0,(float)300.0, tp);
+        canvas.drawText("FV400*400",(float)400.0,(float)400.0, tp);
+        canvas.drawText("FV500*500",(float)500.0,(float)500.0, tp);
+        canvas.drawText("FV600*600",(float)600.0,(float)600.0, tp);
+        // canvas.drawRect(600, 600, 1000, 1000, mPaint);
         if (mFaces != null) {
             for (RectF face : mFaces) {
                 canvas.drawRect(face, mPaint);
